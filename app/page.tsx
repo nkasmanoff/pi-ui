@@ -529,7 +529,7 @@ export default function KioskUI() {
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
-            <ScrollArea className="h-[600px]">
+            <ScrollArea className="h-[600px]" type="always">
               <div className="space-y-4 p-6">
                 {newsLoading && (
                   <div className="space-y-3">
@@ -625,7 +625,7 @@ export default function KioskUI() {
             </CardAction>
           </CardHeader>
           <CardContent>
-            <ScrollArea className="h-[600px]">
+            <ScrollArea className="h-[600px]" type="always">
               <div className="max-w-none p-4 pb-8 text-sm leading-6 break-words whitespace-pre-wrap">
                 {funFactsLoading && (
                   <div className="space-y-3">
