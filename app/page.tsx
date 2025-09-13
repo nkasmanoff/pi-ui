@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
+import ReactMarkdown from "react-markdown"
 import { Card, CardContent, CardHeader, CardTitle, CardAction } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -42,6 +43,27 @@ export default function KioskUI() {
 
   const [stopwatchTime, setStopwatchTime] = useState(0)
   const [isStopwatchRunning, setIsStopwatchRunning] = useState(false)
+
+  // AI Fun Facts (OpenRouter via /api/funfacts)
+  const [funFactsMd, setFunFactsMd] = useState<string>("")
+  const [funFactsLoading, setFunFactsLoading] = useState(false)
+  const [funFactsError, setFunFactsError] = useState<string | null>(null)
+
+  async function loadFunFacts() {
+    setFunFactsLoading(true)
+    setFunFactsError(null)
+    try {
+      const res = await fetch('/api/funfacts', { cache: 'no-store' })
+      if (!res.ok) throw new Error('Failed to fetch fun facts')
+      const data = await res.json()
+      setFunFactsMd(String(data?.content ?? ''))
+      toast({ title: 'AI Fun Facts updated', description: 'New facts loaded.' })
+    } catch (e: any) {
+      setFunFactsError(e?.message ?? 'Fun facts unavailable')
+    } finally {
+      setFunFactsLoading(false)
+    }
+  }
 
   // Weather (Tomorrow.io via /api/weather)
   const [weather, setWeather] = useState<{
@@ -164,6 +186,11 @@ export default function KioskUI() {
 
   useEffect(() => {
     loadNews()
+  }, [])
+
+  // Initial AI fun facts fetch
+  useEffect(() => {
+    loadFunFacts()
   }, [])
 
   // NASA APOD gallery
@@ -362,7 +389,7 @@ export default function KioskUI() {
       </div>
 
       {/* Main Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Left Column */}
         <div className="space-y-6">
           {/* Timer Widget */}
@@ -581,6 +608,56 @@ export default function KioskUI() {
                 </Carousel>
               </div>
             )}
+          </CardContent>
+        </Card>
+        {/* Far Right Column - AI Fun Facts */}
+        <Card>
+          <CardHeader className="pb-0">
+            <CardTitle className="flex items-center gap-2 text-card-foreground">
+              <Bot className="h-5 w-5 text-primary" />
+              AI Generated Content
+            </CardTitle>
+            <CardAction>
+              <Button variant="secondary" size="sm" onClick={loadFunFacts} disabled={funFactsLoading} className="gap-1">
+                <RefreshCw className={`h-4 w-4 ${funFactsLoading ? 'animate-spin' : ''}`} />
+                Refresh
+              </Button>
+            </CardAction>
+          </CardHeader>
+          <CardContent>
+            <ScrollArea className="h-[600px]">
+              <div className="max-w-none p-4 pb-8 text-sm leading-6 break-words whitespace-pre-wrap">
+                {funFactsLoading && (
+                  <div className="space-y-3">
+                    <div className="h-5 w-40 bg-muted rounded" />
+                    <div className="h-5 w-3/4 bg-muted rounded" />
+                    <div className="h-5 w-2/3 bg-muted rounded" />
+                  </div>
+                )}
+                {funFactsError && !funFactsLoading && (
+                  <div className="text-sm text-destructive">{funFactsError}</div>
+                )}
+                {!funFactsLoading && !funFactsError && funFactsMd && (
+                  <ReactMarkdown
+                    components={{
+                      p: ({ node, ...props }) => <p className="mb-2" {...props} />,
+                      ul: ({ node, ...props }) => <ul className="list-disc pl-5 mb-2" {...props} />,
+                      ol: ({ node, ...props }) => <ol className="list-decimal pl-5 mb-2" {...props} />,
+                      li: ({ node, ...props }) => <li className="mb-1" {...props} />,
+                      h1: ({ node, ...props }) => <h1 className="text-base font-semibold mb-2" {...props} />,
+                      h2: ({ node, ...props }) => <h2 className="text-base font-semibold mb-2" {...props} />,
+                      pre: ({ node, ...props }) => <pre className="whitespace-pre-wrap break-words mb-2" {...props} />,
+                      code: ({ node, ...props }) => <code className="px-1 py-0.5 rounded bg-muted" {...props} />,
+                    }}
+                  >
+                    {funFactsMd}
+                  </ReactMarkdown>
+                )}
+                {!funFactsLoading && !funFactsError && !funFactsMd && (
+                  <div className="text-sm text-muted-foreground">Press Refresh to get AI fun facts.</div>
+                )}
+              </div>
+            </ScrollArea>
           </CardContent>
         </Card>
       </div>
